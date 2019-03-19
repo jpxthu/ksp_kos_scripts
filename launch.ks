@@ -91,7 +91,7 @@ UNTIL success {
     WAIT 1.
 }
 
-PRINT "Success."
+PRINT "Success.".
 
 TOGGLE LIGHTS.
 LOCK THROTTLE TO 0.
