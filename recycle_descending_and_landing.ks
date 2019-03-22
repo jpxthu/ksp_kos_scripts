@@ -10,7 +10,7 @@ until Ship:Velocity:Surface * UP:Vector < -100 {
 SAS OFF.
 RCS OFF.
 
-// if not Brakes { toggle Brakes. }
+if not Brakes { toggle Brakes. }
 if not Lights { toggle Lights. }
 print "Open air brakes.".
 
@@ -41,8 +41,7 @@ until FALSE {
 
     log Ship:Sensors:Pres + " " + avlThrust + " " + Throttle + " " + Ship:Mass + " " + acc:X + " " + acc:Y + " " + acc:Z + " " + gravity + " " + vel:X + " " + vel:Y + " " + vel:Z + " " + fac:X + " " + fac:Y + " " + fac:Z + " " + upVec:X + " " + upVec:Y + " " + upVec:Z to "2.log".
     
-    set tarVel to targetVelocity(dist, maxAccZ).
-    set tarThrottle to targetThrottle(velZ, tarVel, maxAccZ).
+    set tarThrottle to targetThrottle(velZ, dist, maxAccZ).
 
     // print maxAccZ + " " + dist + " " + tarV.
 
@@ -100,10 +99,10 @@ until FALSE {
     // } else if velZ > 4 {
         // set tarDir to -vel:Normalized.
     } else {
-        set velH to (vel + velZ * upVec) * 0.02.
+        set velH to (vel + velZ * upVec) * 0.1.
         set velHM to velH:Mag.
-        if velHM > 0.03 {
-            set velH to velH / velHM * 0.03.
+        if velHM > 0.1 {
+            set velH to velH / velHM * 0.1.
         }
         set tarDir to upVec - velH.
         // set tarDir to upVec.
@@ -141,7 +140,7 @@ until FALSE {
         // } else {
         //     if not Brakes { toggle Brakes. }
         // }
-        if steeringError < 0.9995 or velZ < 5 {
+        if steeringError < 0.9995 or velZ < 50 {
             if not RCS { RCS ON. }
         } else {
             if RCS { RCS OFF. }
