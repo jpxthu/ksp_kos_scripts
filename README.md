@@ -20,7 +20,12 @@
 
 负反馈控制火箭姿态和 throttle，先把远地点送到 80 km，滑行之远地点附近把近地点推到 70 km。
 
-**TODO**：下了龙飞船和 Falcon 9 的 MOD（[Tundra](https://forum.kerbalspaceprogram.com/index.php?/topic/166915-16x-tundra-exploration-v1305-march-6th-spacex-falcon-9-dragon-v2-and-starship/)），一次 7 个人，最近报名的土豪有点多，得提高效率。马斯克高啊。
+**TODO**
+- 下了龙飞船和 Falcon 9 的 MOD（[Tundra](https://forum.kerbalspaceprogram.com/index.php?/topic/166915-16x-tundra-exploration-v1305-march-6th-spacex-falcon-9-dragon-v2-and-starship/)），一次 7 个人，最近报名的土豪有点多，得提高效率。马斯克高啊。
+- 用数值优化的方法针对不同的火箭、载荷计算最优轨道，用最节省燃料的方法精确入轨。需要：
+  - 考虑万有引力和离心力；KSP 提供了 Karbal 的质量和万有引力常数。
+  - 不同高度下的大气压力、发动机最大推力和燃料消耗速率；查表可得。
+  - 火箭的阻力系数。如果轨道可以实时计算，可以在飞行时估计阻力系数；如果无法实时需要预先测试（真实情况应该 CFD 或者吹风洞）。
 
 ### 2. 在轨飞行器对接
 
@@ -40,6 +45,7 @@
 - 考虑椭圆轨道和向心力。
 - 利用发动机和推进器在真空中的推力数据资料和飞行器质量替代现有的辨识模型。
 - 加大反馈，加模型预测，动作要更迅捷准确。
+- 处理坐标变换，可以用侧面的接口进行对接。
 
 ### 3. SpaceX 那样的火箭定点回收
 
@@ -51,6 +57,7 @@
 
 - 利用火箭反推抬高/压低轨迹。
 - 改变火箭姿态，利用空气升力改变轨迹。升力与气压、速度平方、升力面积成正比（[Lift Equation - NASA](https://www.grc.nasa.gov/WWW/k-12/rocket/lifteq.html)），在游戏中采集的数据证实了这一点，见 [Matlab Plot](doc/lift.png)。
+- 用 RCS 进行侧向推进。实际测试中，前两条耦合在一起，而且空气升力改变较大，火箭姿态调整响应不太固定，侧推算是个偷懒的办法。
 
 测试用与 Falcon 9 质量相当的火箭，可以落在指定地点 5 米范围内。
 
