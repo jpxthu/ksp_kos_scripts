@@ -20,7 +20,12 @@ set trAvailable to Addons:Tr:Available.
 
 set count to 0.
 set extAcc to V(0, 0, 0).
-set ratioDir to 1.
+
+set lastErrPos to V(0, 0, 0).
+set diffErrPos to V(0, 0, 0).
+
+set dt to 0.01.
+set steeringTime to 2.
 
 until FALSE {
     set acc to Ship:Sensors:Acc.
@@ -42,56 +47,48 @@ until FALSE {
     // log Ship:Sensors:Pres + " " + avlThrust + " " + Throttle + " " + Ship:Mass + " " + acc:X + " " + acc:Y + " " + acc:Z + " " + gravity + " " + vel:X + " " + vel:Y + " " + vel:Z + " " + fac:X + " " + fac:Y + " " + fac:Z + " " + upVec:X + " " + upVec:Y + " " + upVec:Z to "2.log".
     
     set tarThrottle to targetThrottle(velZ, dist, maxAccZ, gravity).
-
-    // print maxAccZ + " " + dist + " " + tarV.
-
-    // if dist > 5000 {
-    //     set tarThrottle1 to 0.
-    // } else {
-        set tarThrottle1 to tarThrottle.
-    // }
-    set tarThrottle2 to min(1, max(0, tarThrottle1)).
+    set tarThrottle2 to min(1, max(0, tarThrottle)).
     
     CLEARVECDRAWS().
     set tarDir to V(0, 0, 0).
     if velZ > 50 {
         set impPos to Addons:Tr:ImpactPos:Position.
         set lanPos to landGeo:Position.
+        set tarPos to lanPos.
 
-        set errPos to lanPos - upVec * (lanPos * upVec).
+        set errPos to impPos - lanPos.
+        set errPos to errPos - upVec * (errPos * upVec).
+        set diffErrPos to diffErrPos + ((errPos - lastErrPos) / dt - diffErrPos) * dt * 5.
+        set lastErrPos to errPos.
+        set errPos to errPos + diffErrPos * steeringTime.
+        
         set errPosMag to errPos:Mag.
-        if errPosMag > 0.01 {
-            set errPos to errPos:Normalized * min(10, max(0, (dist - MIN_HEIGHT) / 10)).
-        }
-        set tarPos to lanPos + errPos * max(0, ratioDir).
-        // set tarPos to lanPos + errPos * ratioDir.
+        
+        set tarLift to errPosMag / min(10000, max(1000, dist - MIN_HEIGHT)) * 100.
 
         set plaVec to -vel:Normalized.
         
         set rotateVec to VCRS(impPos:Normalized, tarPos:Normalized).
         set rotateMag to rotateVec:Mag.
-        set rotateDir to V(0, 0, 0).
-        if rotateMag < 0.0001 {
-            set rotateMag to 0.
-        } else {
-            set rotateDir to rotateVec / rotateMag.
+        set rotateDir to rotateVec:Normalized.
+        // if rotateMag < 0.01 set rotateDir to V(0, 0, 0).
+
+        set preThrottle to predictThrottle(dist - velZ * steeringTime, velZ, maxAccZ, gravity).
+        set lift to liftPerAngle(acc + gravity * upVec, vel, fac, Ship:Sensors:Pres, maxAcc:Mag * preThrottle).
+        if abs(lift) < 0.01 {
+            set lift to max(0.01, -preThrottle * 0.1).
         }
-        set ratioDir to min(1, max(-1, 1 - Throttle * 100000 / velZ ^ 2)).
-        if ratioDir > 0 {
-            set rotateMag to rotateMag * max(5, sqrt(dist) / 2).
-            if rotateMag > 0.4 {
-                set rotateMag to 0.4.
-            }
-        } else {
-            set rotateMag to rotateMag * 2.
-            if rotateMag > 0.15 {
-                set rotateMag to 0.15.
-            }
-        }
-        set rotateMag to rotateMag * ratioDir.
+        set tarAng to tarLift / lift.
+        // if tarAng > 0 {
+        //     set tarAng to tarAng * 2.
+        // }
+        print tarAng + " " + lift + " " + preThrottle.
+        set tarAng to max(-0.1, min(0.3, tarAng)).
+
+        set rotateMag to tarAng.
         set tarDir to VCRS(rotateDir, plaVec) * rotateMag + plaVec * sqrt(1 - rotateMag * rotateMag).
-        set ratio to min(1, max(0, (velZ - 10) / 20)).
-        set tarDir to tarDir * ratio + plaVec * (1 - ratio).
+        // set ratio to min(1, max(0, (velZ - 10) / 20)).
+        // set tarDir to tarDir * ratio + plaVec * (1 - ratio).
 
         VECDRAW(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, TRUE).
         VECDRAW(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, TRUE).
@@ -147,7 +144,7 @@ until FALSE {
         }
     }
 
-    wait 0.01.
+    wait dt.
 }
 
 wait 0.01.
