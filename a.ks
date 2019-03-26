@@ -1,23 +1,15 @@
-lock steering to UP.
-
-until false {
-    set tmp to Ship:Facing:Vector * UP:Vector.
-    set tmp2 to min(4, (max(0, 1 - tmp ^ 2)) ^ 0.5 * 2 + 2).
-    print tmp2.
-    set SteeringManager:MaxStoppingTime to tmp2.
-
-    // if abs(Ship:Control:Pitch) + abs(Ship:Control:Yaw) > 0.2 {
-    //     RCS ON.
-    // } else {
-    //     RCS OFF.
-    // }
-    wait 0.1.
-
-    print Ship:Control:PilotRoll + " " + Ship:Control:PilotPitch + " " + Ship:Control:PilotYaw.
-    // if tmp > 0.9999 {
-    //     break.
-    // }
+set n to 0.
+until n > 1000 {
+    local pres is n / 1000.
+    log pres + " " + Ship:AvailableThrustAt(pres) to "thrust.log".
+    set n to n + 1.
 }
 
-// wait 5.
-// unlock steering.
+// lock Steering to UP.
+lock Throttle to 1.
+stage.
+
+until false {
+    log Ship:Sensors:Pres + " " + Altitude + " " + Ship:Velocity:Surface:X + " " + Ship:Velocity:Surface:Y + " " + Ship:Velocity:Surface:Z + " " + Ship:Velocity:Orbit:X + " " + Ship:Velocity:Orbit:Y + " " + Ship:Velocity:Orbit:Z + " " + UP:Vector:X + " " + UP:Vector:Y + " " + UP:Vector:Z + " " + Ship:Sensors:Acc:X + " " + Ship:Sensors:Acc:Y + " " + Ship:Sensors:Acc:Z + " " + Body:MU + " " + Body:Radius + " " + Ship:Mass + " " + Ship:Facing:Vector:X + " " + Ship:Facing:Vector:Y + " " + Ship:Facing:Vector:Z to "3.log".
+    wait 0.01.
+}
