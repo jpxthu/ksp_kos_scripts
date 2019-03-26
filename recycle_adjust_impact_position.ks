@@ -35,7 +35,8 @@ RCS ON.
 until FALSE {
     wait 0.01.
 
-    local tarVec is landGeo:Position - Addons:Tr:ImpactPos:Position.
+    local tarPos is landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
+    local tarVec is tarPos - Addons:Tr:ImpactPos:Position.
     local tarDir is tarVec:Normalized.
     local tarErr is tarVec:Mag.
 
@@ -70,4 +71,4 @@ lock Throttle to 0.
 lock Steering to UP.
 print "Predicted impact position adjust finished.".
 
-run recycle_descending_and_landing.ks.
+// run recycle_descending_and_landing.ks.
