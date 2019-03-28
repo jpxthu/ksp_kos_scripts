@@ -53,7 +53,7 @@ until FALSE {
     if velZ > 10 {
         set impPos to Addons:Tr:ImpactPos:Position.
         set lanPos to landGeo:Position.
-        set tarPos to lanPos + velH * 0.8.
+        set tarPos to lanPos + velH:Normalized * VelZ * 0.1.
 
         print velH:Mag.
 

@@ -1,7 +1,8 @@
-set MIN_HEIGHT to 50.
+set VESSEL_HEIGHT to 30.
+set MIN_HEIGHT to 10 + VESSEL_HEIGHT.
 // set MIN_HEIGHT to 15.
 set MIN_VELOCITY to 4.
-set KP TO 10.
+set KP TO 4.
 
 function targetVelocity {
     parameter dist_.
@@ -21,6 +22,8 @@ function targetThrottle {
     local dt is 0.1.
     local tarVel2 is targetVelocity(dist_ - vel_ * dt, maxAcc_).
     local tarAcc is (tarVel - tarVel2) / dt.
+
+    // print vel_ + " " + tarVel + " " + tarAcc + " " + maxAcc_.
 
     return min(1, max(0, ((vel_ - tarVel) * KP + tarAcc + gravity_) / maxAcc_)).
 }
@@ -42,7 +45,7 @@ function predictThrottle {
 
 // (c * pres * v ^ 2 - avlThrust * Throttle / mass) * sin(a) = acc
 
-set liftRatio to 0.000006.
+set liftRatio to 0.00002.
 function liftPerAngle {
     parameter acc_.
     parameter vel_.
@@ -58,13 +61,13 @@ function liftPerAngle {
     local tmp is pres_ * velM ^ 2.
     local tmp2 is tmp * sinTheta.
 
-    if accS > 1 and tmp2 > 1 {
+    if accS > 1 and pres_ > 0.01 and velM > 100 and sinTheta > 0.2 {
         local c is accS / (tmp * sinTheta).
         set liftRatio to liftRatio + (c - liftRatio) * max(0, 0.1 - Throttle) * 0.5.
     }
 
     local tmp3 is liftRatio * tmp - thrustAcc_.
 
-    // print liftRatio + " " + tmp3.
+    print liftRatio + " " + tmp3 + " " + thrustAcc_.
     return tmp3.
 }
