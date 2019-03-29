@@ -1,4 +1,4 @@
-function [pPa, pAtm, dens] = KerbinAtmosphere(h)
+function [pPa, pAtm, dens] = KerbinAtmosphere(h_meter)
 
 tmp_ = [ ...
     0,      101325, 1.000,  1.225;
@@ -16,12 +16,13 @@ tmp_ = [ ...
     70000,  0.000,  0.000,  0.000];
 
 for i = 1 : size(tmp_, 1) - 1
-    if h > tmp_(i + 1, 1)
+    if h_meter > tmp_(i + 1, 1)
         continue;
     end
-    pPa  = tmp_(i, 2) + (tmp(i + 1, 2) - tmp(i, 2)) * (h - tmp_(i, 1));
-    pAtm = tmp_(i, 3) + (tmp(i + 1, 3) - tmp(i, 3)) * (h - tmp_(i, 1));
-    dens = tmp_(i, 4) + (tmp(i + 1, 4) - tmp(i, 4)) * (h - tmp_(i, 1));
+    ratio = (h_meter - tmp_(i, 1)) / (tmp_(i + 1, 1) - tmp_(i, 1));
+    pPa  = tmp_(i, 2) + (tmp_(i + 1, 2) - tmp_(i, 2)) * ratio;
+    pAtm = tmp_(i, 3) + (tmp_(i + 1, 3) - tmp_(i, 3)) * ratio;
+    dens = tmp_(i, 4) + (tmp_(i + 1, 4) - tmp_(i, 4)) * ratio;
     return;
 end
 

@@ -43,7 +43,7 @@ for i = 1 : n
     if velSurfaceM(i) > 50 && pres(i) > 0.005
         coef(i) = f(i) / pres(i) / velSurfaceM(i) ^ 2;
         x = [x; velSurfaceM(i)];
-        y = [y; , coef(i)];
+        y = [y; coef(i)];
     end
 end
 
