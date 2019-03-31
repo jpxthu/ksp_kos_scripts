@@ -45,8 +45,27 @@ $$
 $$
 
 $$
-\begin{aligned}
-    \Delta x(i) &= \sum_{k=0}^i \Delta v_x(k)\Delta t = \sum_{k=0}^i (i-k)\Delta a_x(k) \Delta t^2 \\
-    \Delta h(i) &= \sum_{k=0}^i \Delta v_y(k)\Delta t = \sum_{k=0}^i (i-k)\Delta a_y(k) \Delta t^2
+\begin{aligned} { }
+    \cfrac{\partial\vec{v}(i)}{\partial\theta(j)} = \cfrac{\partial\vec{a}(j)}{\partial\theta(j)} \Delta t, & & i \ge j
 \end{aligned}
 $$
+
+位置变化：
+
+$$
+\Delta\vec{x}(i) = \sum_{k=0}^i \Delta\vec{v}(k)\Delta t = \sum_{k=0}^i (i-k)\Delta\vec{a}(k) \Delta t^2
+$$
+
+$$
+\begin{aligned} { }
+    \cfrac{\partial\vec{x}(i)}{\partial E(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial E(j)}\Delta t^2, & & i \ge j
+\end{aligned}
+$$
+
+$$
+\begin{aligned} { }
+    \cfrac{\partial\vec{x}(i)}{\partial\theta(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial\theta(j)}\Delta t^2, & & i \ge j
+\end{aligned}
+$$
+
+质量变化：
