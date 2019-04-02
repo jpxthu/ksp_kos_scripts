@@ -2,6 +2,9 @@ function aaa(dt, n, throttle, tilt)
 
 thrust1 = 2298.387;
 thrust0 = 2500.000;
+MU = 3.5316e12;
+R = 6e5;
+FR = 1;
 
 vx = zeros(n, 1);
 vy = zeros(n, 1);
@@ -24,9 +27,8 @@ for i = 2 : n
     x(i) = x(i - 1) + vx(i) * dt;
     h(i) = h(i - 1) + vy(i) * dt;
     m(i) = m(i - 1) - fuelRate * throttle(i);
-
-    % dax = dthrottle * thrustMax / m * sin(tilt + dtilt)
-    % day = dthrottle * thrustMax / m * cos(tilt + dtilt)
+    
+    
 end
 
 end

@@ -27,9 +27,9 @@ $$
 $$
 
 $$
-\begin{aligned}
-    \cfrac{\partial \vec{a}(i)}{\partial E(j)} = \cfrac{\partial \vec{a}(i)}{\partial\theta(j)} = \boldsymbol{0}, & & i \neq j
-\end{aligned}
+\begin{array} { }
+    \cfrac{\partial \vec{a}(i)}{\partial E(j)} = \cfrac{\partial \vec{a}(i)}{\partial\theta(j)} = \boldsymbol{0}, & i \neq j
+\end{array}
 $$
 
 速度变化：
@@ -39,15 +39,15 @@ $$
 $$
 
 $$
-\begin{aligned}
-    \cfrac{\partial \vec{v}(i)}{\partial E(j)} = \cfrac{\partial \vec{a}(j)}{\partial E(j)} \Delta t, & & i \ge j
-\end{aligned}
+\begin{array} { }
+    \cfrac{\partial \vec{v}(i)}{\partial E(j)} = \cfrac{\partial \vec{a}(j)}{\partial E(j)} \Delta t, & i \ge j
+\end{array}
 $$
 
 $$
-\begin{aligned} { }
-    \cfrac{\partial\vec{v}(i)}{\partial\theta(j)} = \cfrac{\partial\vec{a}(j)}{\partial\theta(j)} \Delta t, & & i \ge j
-\end{aligned}
+\begin{array} { }
+    \cfrac{\partial\vec{v}(i)}{\partial\theta(j)} = \cfrac{\partial\vec{a}(j)}{\partial\theta(j)} \Delta t, & i \ge j
+\end{array}
 $$
 
 位置变化：
@@ -57,15 +57,28 @@ $$
 $$
 
 $$
-\begin{aligned} { }
-    \cfrac{\partial\vec{x}(i)}{\partial E(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial E(j)}\Delta t^2, & & i \ge j
-\end{aligned}
+\begin{array} { }
+    \cfrac{\partial\vec{x}(i)}{\partial E(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial E(j)}\Delta t^2, & i \ge j
+\end{array}
 $$
 
 $$
-\begin{aligned} { }
-    \cfrac{\partial\vec{x}(i)}{\partial\theta(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial\theta(j)}\Delta t^2, & & i \ge j
-\end{aligned}
+\begin{array} { }
+    \cfrac{\partial\vec{x}(i)}{\partial\theta(j)} = (i-j)\cfrac{\partial\vec{a}(j)}{\partial\theta(j)}\Delta t^2, & i \ge j
+\end{array}
 $$
 
 质量变化：
+
+$$
+\begin{aligned}
+    \cfrac{\partial m(i)}{\partial E(j)} &= - FuelRate \cdot \Delta E(j) \Delta t, & i \ge j \\
+    \cfrac{\partial m(i)}{\partial \theta(j)} &= 0
+\end{aligned}
+$$
+
+优化目标：
+
+$$
+\min \Rightarrow C_{vx}\left(v_x - v_{x,tar}\right)^2 + C_{vy}v_y^2 + C_h\left(h - h_{tar}\right)^2 - C_mm + \sum 
+$$

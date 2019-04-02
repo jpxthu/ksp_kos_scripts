@@ -25,6 +25,7 @@ SAS OFF.
 // }
 // wait 1.
 print "Adjust predicted impact position.".
+ResetSteeringManager().
 
 set lastErr to (landGeo:Position - Addons:Tr:ImpactPos:Position):Mag.
 set count to 0.
@@ -34,6 +35,7 @@ RCS ON.
 
 until FALSE {
     wait 0.01.
+    CLEARVECDRAWS().
 
     local tarPos is landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
     local tarVec is tarPos - Addons:Tr:ImpactPos:Position.
@@ -50,6 +52,8 @@ until FALSE {
     }
 
     // print tarErr.
+    VECDRAW(V(0, 0, 0), tarDir * 50, RGB(1, 0, 0), "TAR", 1, TRUE).
+    VECDRAW(V(0, 0, 0), Ship:Facing:Vector * 50, RGB(0, 1, 0), "Fac", 1, TRUE).
 
     if began {
         if tarErr >= lastErr and tarErr < 100 {

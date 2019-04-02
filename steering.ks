@@ -8,5 +8,5 @@ function SetMaxStoppingTime {
 }
 
 function ResetSteeringManager {
-    SteeringManager:ResetTdDefault().
+    SteeringManager:ResetToDefault().
 }
