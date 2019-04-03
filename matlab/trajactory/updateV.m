@@ -10,7 +10,7 @@ dpe = zeros(n, 2);
 dpt = zeros(n, 2);
 dme = zeros(n, 1);
 dfe = zeros(n, 1);
-% dft = zeros(n, 1);
+dft = zeros(n, 1);
 
 for i = 1 : n - 1
     dae(i, :) = thrustMax(i) / m(i) * [sin(tilt(i)), cos(tilt(i))];
@@ -21,20 +21,38 @@ for i = 1 : n - 1
     dpt(i, :) = (n - i) * dat(i, :) * dt ^ 2;
     dme(i) = -FR * dt;
     dfe(i) = fThrottleDiff(throttle(i));
-%     dft(i) = fTiltDiff(tilt(i));
+    dft(i) = fTiltDiff(tilt(i));
 end
 
-dee = 2 .* Cvx .* (vx - tarVx) .* dve(:, 1) ...
-    + 2 .* Cvy .* vy .* dve(:, 2) ...
-    + 2 .* Ch .* (h - tarH) .* dpe(:, 1) ...
-    - Cm .* dme + dfe;
-det = 2 .* Cvx .* (vx - tarVx) .* dvt(:, 1) ...
-    + 2 .* Cvy .* vy .* dvt(:, 2) ...
-    + 2 .* Ch .* (h - tarH) .* dpt(:, 1);
+deeVx = 2 * Cvx * (vx(n) - tarVx) * dve(:, 1);
+deeVy = 2 * Cvy * vy(n) * dve(:, 2);
+deeh  = 2 * Ch * (h(n) - tarH) * dpe(:, 1);
+deem  = - Cm * dme;
+deee  = dfe;
+dee = deeVx + deeVy + deeh + deem + deee;
+
+detVx = 2 * Cvx * (vx(n) - tarVx) * dvt(:, 1);
+detVy = 2 * Cvy * vy(n) * dvt(:, 2);
+detH  = 2 * Ch * (h(n) - tarH) * dpt(:, 1);
+dett  = dft;
+det = detVx + detVy + detH + dett;
 
 length = sum([dee; det] .^ 2) ^ 0.5;
 
-step = 10 / length;
+figure(2);
+ax(1) = subplot(2, 1, 1);
+plot([deeVx, deeVy, deeh, deem, deee]);
+grid on;
+legend('v_x', 'v_y', 'h', 'm', 'e');
+
+ax(2) = subplot(2, 1, 2);
+plot([detVx, detVy, detH, dett]);
+grid on;
+legend('v_x', 'v_y', 'h', 't');
+
+linkaxes(ax, 'x');
+
+step = 1 / length;
 throttle = throttle - dee * step;
 tilt = tilt - det * step;
 

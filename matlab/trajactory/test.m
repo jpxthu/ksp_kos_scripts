@@ -1,14 +1,18 @@
+addpath('../atmosphere');
+
 constant;
 
-dt = 0.1;
-n = 4000;
+dt = 1;
+n = 200;
 
 throttle = zeros(n, 1) + 1;
-tilt = zeros(n, 1);
+tilt = zeros(n, 1) + pi / 4;
 
 [vx, vy, h, x, m, thrustMax, throttle] = predict(dt, n, throttle, tilt);
 
 while 1
+    figure(1);
+    
     axn = 4;
     axi = 0;
     axi = axi + 1;

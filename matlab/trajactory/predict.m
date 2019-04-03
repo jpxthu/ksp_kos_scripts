@@ -25,6 +25,8 @@ for i = 2 : n
     h(i) = h(i - 1) + vy(i) * dt;
     m(i) = m(i - 1) - FR * throttle(i - 1) * dt;
     
+    throttle(i) = min(1, max(0, throttle(i)));
+    tilt(i) = min(pi / 2, max(0, tilt(i)));
     if m(i) <= mMin
         throttle(i) = 0;
     end
