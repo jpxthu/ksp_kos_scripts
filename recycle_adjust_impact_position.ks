@@ -1,35 +1,36 @@
-set landGeo to LatLng(-0.0972079934541428, -74.5576762507677). //Ship:GeoPosition.
+parameter landGeo.// is LatLng(-0.0972079934541428, -74.5576762507677).
 
-run steering.ks.
+run once steering_manager.
+run once trajactory.
+
+set impPos to Ship:Position.
+function UpdateImpPos {
+    local sth is False.
+    until Core:Messages:Empty {
+        set msg to Core:Messages:Pop.
+        set sth to True.
+    }
+    if sth {
+        set impPos to msg:Content.
+    }
+}
 
 SAS OFF.
-// RCS OFF.
 
-// lock Steering to UP.
-// lock Throttle to 1.
-// Stage.
-// // wait 1.
-// if Gear { toggle Gear. }
-
-// until Apoapsis > 120000 {
-//     lock Steering to heading(90, 90 + Altitude / 2000).
-//     lock Throttle to 1.
-//     wait 0.1.
-// }
-// lock Throttle to 0.
-// print "Apapsis to 120000. Shutdown engines.".
-
-// until Ship:Sensors:Pres < 0.0001 {
-//     lock Steering to heading(90, 90 + Altitude / 2000).
-//     wait 0.1.
-// }
-// wait 1.
 print "Adjust predicted impact position.".
 ResetSteeringManager().
 
-set lastErr to (landGeo:Position - Addons:Tr:ImpactPos:Position):Mag.
+// set lastErr to (landGeo:Position - Addons:Tr:ImpactPos:Position):Mag.
+UpdateImpPos().
+set lastErr to 999999.
 set count to 0.
 set began to False.
+
+set sset to Ship:Facing:Vector.
+set tset to 0.
+
+lock Steering to sset.
+lock Throttle to tset.
 
 RCS ON.
 
@@ -37,42 +38,42 @@ until FALSE {
     wait 0.01.
     CLEARVECDRAWS().
 
-    local tarPos is landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
-    local tarVec is tarPos - Addons:Tr:ImpactPos:Position.
+    local upVec is UP:Vector.
+
+    // local tarPos is landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
+    local tarPos is landGeo:Position + (Ship:Velocity:Surface - Ship:Velocity:Surface * UP:Vector * UP:Vector):Normalized * 100.
+    // local tarVec is tarPos - Addons:Tr:ImpactPos:Position.
+    UpdateImpPos().
+    local impPosH is impPos / max(1, -impPos * upVec) * max(1, -tarPos * upVec).
+    local tarVec is tarPos - impPosH.
     local tarDir is tarVec:Normalized.
     local tarErr is tarVec:Mag.
 
-    lock Steering to tarDir.
+    set sset to tarDir.
+
     SetMaxStoppingTime(tarDir, 2, 4).
-    if tarDir * Ship:Facing:Vector > 0.999 {
-        lock Throttle to min(1, tarErr / 1000).
+    local steerCM is tarDir * Ship:Facing:Vector.
+    if steerCM > 0.99 {
+        set tset to min(1, tarErr / 10000) * (steerCM - 0.99) * 100.
         set began to true.
     } else {
-        lock Throttle to 0.
+        set tset to 0.
     }
 
     // print tarErr.
-    VECDRAW(V(0, 0, 0), tarDir * 50, RGB(1, 0, 0), "TAR", 1, TRUE).
-    VECDRAW(V(0, 0, 0), Ship:Facing:Vector * 50, RGB(0, 1, 0), "Fac", 1, TRUE).
+    // VECDRAW(V(0, 0, 0), tarDir * 50, RGB(1, 0, 0), "TAR", 1, TRUE).
+    // VECDRAW(V(0, 0, 0), Ship:Facing:Vector * 50, RGB(0, 1, 0), "Fac", 1, TRUE).
 
     if began {
-        if tarErr >= lastErr and tarErr < 100 {
+        if tarErr >= lastErr and tarErr < 1000 {
             break.
         }
-        //     set count to count + 1.
-        //     if count > 10 {
-        //         break.
-        //     }
-        // } else {
-        //     set count to 0.
-        // }
     }
 
     set lastErr to tarErr .
 }
 
-lock Throttle to 0.
-lock Steering to UP.
+unlock Throttle.
+unlock Steering.
+ResetSteeringManager().
 print "Predicted impact position adjust finished.".
-
-// run recycle_descending_and_landing.ks.

@@ -1,6 +1,6 @@
-function KerbinAtmosphereTest
+% function KerbinAtmosphereTest
 
-h = (0 : 70000)';
+h = (1 : 70000)';
 n = size(h, 1);
 pPa1 = zeros(n, 1);
 pPa2 = zeros(n, 1);
@@ -34,7 +34,7 @@ grid on;
 legend('pAtm1', 'pAtm2');
 
 ax(3) = subplot(4, 1, 3);
-plot(h, log([dens1, dens2]) / log(10));
+plot(h, ([dens1, dens2, 3.407 .* exp(-((h+18250) ./ 17990) .^ 2)]));
 grid on;
 legend('dens1', 'dens2');
 
@@ -45,4 +45,4 @@ legend('T');
 
 linkaxes(ax, 'x');
 
-end
+% end

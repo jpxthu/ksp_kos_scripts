@@ -1,9 +1,28 @@
-run recycle_descending_and_landing_lib.ks.
+parameter landGeo.// is LatLng(-0.0972079934541428, -74.5576762507677).
 
-set landGeo to LatLng(-0.0972079934541428, -74.5576762507677). //Ship:GeoPosition.
+run recycle_descending_and_landing_lib.ks.
+run once trajactory.
+
+set impPos to Ship:Position.
+function UpdateImpPos {
+    local sth is False.
+    until Core:Messages:Empty {
+        set msg to Core:Messages:Pop.
+        set sth to True.
+    }
+    if sth {
+        set impPos to msg:Content.
+    }
+}
+
+set tset to 0.
+set sset to UP.
+
+lock Throttle to tset.
+lock Steering to sset.
 
 until Ship:Velocity:Surface * UP:Vector < -100 {
-    lock Steering to UP.
+    set sset to UP.
     wait 0.1.
 }
 
@@ -51,11 +70,13 @@ until FALSE {
     CLEARVECDRAWS().
     set tarDir to V(0, 0, 0).
     if velZ > 10 {
-        set impPos to Addons:Tr:ImpactPos:Position.
+        // set impPos to Addons:Tr:ImpactPos:Position.
+        // set impPos to ImpactPosition(3, -landGeo:Position * upVec).
+        UpdateImpPos().
         set lanPos to landGeo:Position.
-        set tarPos to lanPos + velH:Normalized * VelZ * 0.1.
+        set tarPos to lanPos + velH * 0.1.
 
-        print velH:Mag.
+        // print velH:Mag.
 
         set plaVec to -vel:Normalized.
         set tarDir to plaVec.
@@ -67,7 +88,7 @@ until FALSE {
 
         VECDRAW(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, TRUE).
         VECDRAW(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, TRUE).
-        VECDRAW(V(0, 0, 0), lanPos, RGB(0, 0, 1), "LAN", 1, TRUE).
+        VECDRAW(V(0, 0, 0), tarDir * 50, RGB(0, 0, 1), "tarDir", 1, TRUE).
     } else {
         set Ship:Control:StarBoard to -vel * Ship:Facing:StarVector.
         // set Ship:Control:Fore      to 0.
@@ -84,8 +105,8 @@ until FALSE {
     // set steeringError to tarDir * fac.
     // if steeringError < 0.995 { set tarThrottle to max(0.1, tarThrottle). }
 
-    lock Steering to tarDir.
-    lock Throttle to tarThrottle.
+    set sset to tarDir.
+    set tset to tarThrottle.
 
     // VECDRAW(V(0, 0, 0), tarDir * 20, RGB(1, 0, 1), "STE", 1, TRUE).
 
@@ -123,10 +144,8 @@ until FALSE {
     wait dt.
 }
 
-wait 0.01.
-lock Throttle to 0.
-lock Steering to UP.
-wait 0.01.
+set tset to 0.
+wait 0.1.
 unlock Throttle.
 unlock Steering.
 
