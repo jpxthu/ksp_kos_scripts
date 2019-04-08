@@ -1,6 +1,8 @@
-local stageFule is 3000.
+RunOncePath("/recycle/recycle_constant").
 
-set tank to Ship:PartsTagged("FT3")[0].
+local stageFule to FALCON_RETURN_FUEL.
+
+local tank to Ship:PartsTagged("FT3")[0].
 for r in tank:Resources {
     if r:Name = "LiquidFuel" {
         set fuel to r.

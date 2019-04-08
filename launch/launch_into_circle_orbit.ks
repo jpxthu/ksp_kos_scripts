@@ -1,6 +1,9 @@
 parameter tarHeight.
 
-run launch.lib.ks.
+set maxQ to 15000.
+set dt to 0.1.
+
+RunOncePath("/lib/lib_launch").
 
 SAS OFF.
 RCS OFF.
@@ -11,6 +14,11 @@ set sset to UP.
 lock Throttle to tset.
 lock Steering to sset.
 
+function AngleToHeading {
+    parameter angle.
+    return Heading(90, 90 - angle).
+}
+
 until Apoapsis > tarHeight {
     set sset to AngleToHeading(Apoapsis / tarHeight * 90).
 
@@ -18,7 +26,7 @@ until Apoapsis > tarHeight {
     set tset to min(1, max(0, (1.1 - q / maxQ) * 5)).
 
     wait dt.
-    print "0 " + Apoapsis + " " + Periapsis.
+    // print "0 " + Apoapsis + " " + Periapsis.
 }
 
 until false {
@@ -41,14 +49,14 @@ until false {
     }
 
     wait dt.
-    print "1 " + Apoapsis + " " + Periapsis.
+    // print "1 " + Apoapsis + " " + Periapsis.
 }
 
 until Periapsis + Apoapsis > tarHeight * 2 {
     set tset to 1.
 
     wait dt.
-    print "2 " + Apoapsis + " " + Periapsis.
+    // print "2 " + Apoapsis + " " + Periapsis.
 }
 
 // until false {
@@ -75,8 +83,9 @@ until Periapsis + Apoapsis > tarHeight * 2 {
 // }
 
 set tset to 0.
-print Apoapsis + " " + Periapsis.
+print "Into orbit.".
+print "Apoapsis: " + Apoapsis + " m".
+print "Periapsis: " + Periapsis + " m".
 
-print "Success.".
 unlock Steering.
 unlock Throttle.

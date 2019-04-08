@@ -1,7 +1,10 @@
-local stageFule is 2000.
+RunOncePath("/recycle/recycle_constant").
 
-set tank to Ship:PartsTagged("FT3")[0].
-set tank2 to Ship:PartsTagged("FT4")[0].
+local stageFule to FALCON_RETURN_FUEL.
+
+local tank to Ship:PartsTagged("FT4")[0].
+local tank2 to Ship:PartsTagged("FT3")[0].
+local fuel to 0.
 for r in tank:Resources {
     if r:Name = "LiquidFuel" {
         set fuel to r.
@@ -11,19 +14,19 @@ for r in tank:Resources {
 
 wait until fuel:Amount < stageFule.
 
-set disapartVec to (tank:Position - tank2:Position):Normalized * 0.5.
+local disapartVec to (tank:Position - tank2:Position):Normalized * 0.5.
 wait 0.1.
 
-Stage.
+// Stage.
 
-set tset to 0.
-set sset to Ship:Velocity:Surface.
+local tset to 0.
+local sset to Ship:Velocity:Surface.
 
 lock Throttle to tset.
 lock Steering to sset.
 
 RCS ON.
-set timeNext to Time + 5.
+local timeNext to Time + 5.
 set sset to UP:Vector + disapartVec * 0.5.
 until Time > timeNext {
     set Ship:Control:StarBoard to disapartVec * Ship:Facing:StarVector.
@@ -39,7 +42,7 @@ RCS OFF.
 unlock Throttle.
 unlock Steering.
 
-local landGeo to LatLng(-0.108690763956662, -74.5642229639099).
+local landGeo to KERBAL_CENTER_LAUNCH_PAD_NORTH_GEO.
 
-run recycle_adjust_impact_position(landGeo).
-run recycle_descending_and_landing3(landGeo).
+RunPath("/recycle/recycle_adjust", landGeo).
+RunPath("/recycle/recycle_landing3", landGeo).
