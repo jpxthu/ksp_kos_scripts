@@ -1,29 +1,18 @@
 parameter landGeo.
 
 RunOncePath("/lib/steering_manager").
-RunOncePath("/lib/trajactory").
-
-local impPos to Ship:Position.
-function UpdateImpPos {
-    local updated to False.
-    local msg to 0.
-    until Core:Messages:Empty {
-        set msg to Core:Messages:Pop.
-        set updated to True.
-    }
-    if updated {
-        set impPos to msg:Content.
-    }
-}
+RunOncePath("/recycle/recycle_lib").
 
 SAS OFF.
 
 print "Adjust predicted impact position.".
 ResetSteeringManager().
+Core:Messages:Clear().
 
-UpdateImpPos().
 local lastErr to 999999.
 local began to False.
+local lanPos to landGeo:Position.
+local landOnSea to landGeo:TerrainHeight < 0.
 
 local sset to Ship:Facing:Vector.
 local tset to 0.
@@ -38,11 +27,19 @@ until FALSE {
     CLEARVECDRAWS().
 
     local upVec to UP:Vector.
+    if landOnSea {
+        set lanPos to landGeo:AltitudePosition(0).
+    } else {
+        set lanPos to landGeo:Position.
+    }
 
     // local tarPos to landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
-    local tarPos to landGeo:Position + (Ship:Velocity:Surface - Ship:Velocity:Surface * UP:Vector * UP:Vector):Normalized * 100.
+    local tarPos to lanPos + (Ship:Velocity:Surface - Ship:Velocity:Surface * UP:Vector * UP:Vector):Normalized * 100.
     // local tarVec to tarPos - Addons:Tr:ImpactPos:Position.
-    UpdateImpPos().
+    local impPos to UpdateImpPos().
+    if Addons:Tr:HasImpact {
+        set impPos to Addons:Tr:ImpactPos:Position.
+    }
     local impPosH to impPos / max(1, -impPos * upVec) * max(1, -tarPos * upVec).
     local tarVec to tarPos - impPosH.
     local tarDir to tarVec:Normalized.
@@ -52,8 +49,8 @@ until FALSE {
 
     SetMaxStoppingTime(tarDir, 2, 4).
     local steerCM to tarDir * Ship:Facing:Vector.
-    if steerCM > 0.99 {
-        set tset to min(1, tarErr / 10000) * (steerCM - 0.99) * 100.
+    if steerCM > 0.95 {
+        set tset to min(1, tarErr / 10000) * (steerCM - 0.95) * 20.
         set began to true.
     } else {
         set tset to 0.

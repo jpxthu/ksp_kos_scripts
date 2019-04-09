@@ -1,14 +1,12 @@
-// set VESSEL_HEIGHT to 30.
-local MIN_HEIGHT to 10.
 local MIN_VELOCITY to 4.
 local KP to 4.
 
 function TargetVelocity {
     parameter dist_.
     parameter maxAcc_.
-    parameter vesselHeight_.
+    parameter minHeight_.
 
-    return max(MIN_VELOCITY, sqrt(max(0, (dist_ - minHeight_ - MIN_HEIGHT) * maxAcc_ * 2)) * 0.9).
+    return max(MIN_VELOCITY, sqrt(max(0, (dist_ - minHeight_) * maxAcc_ * 2)) * 0.9).
 }
 
 function TargetThrottle {
@@ -16,12 +14,12 @@ function TargetThrottle {
     parameter dist_.
     parameter maxAcc_.
     parameter gravity_.
-    parameter vesselHeight_.
+    parameter minHeight_.
 
-    local tarVel to TargetVelocity(dist_, maxAcc_, vesselHeight_).
+    local tarVel to TargetVelocity(dist_, maxAcc_, minHeight_).
 
     local dt to 0.1.
-    local tarVel2 to TargetVelocity(dist_ - vel_ * dt, maxAcc_, vesselHeight_).
+    local tarVel2 to TargetVelocity(dist_ - vel_ * dt, maxAcc_, minHeight_).
     local tarAcc to (tarVel - tarVel2) / dt.
 
     return min(1, max(0, ((vel_ - tarVel) * KP + tarAcc + gravity_) / maxAcc_)).
@@ -32,10 +30,10 @@ function PredictThrottle {
     parameter vel_.
     parameter maxAcc_.
     parameter gravity_.
-    parameter vesselHeight_.
+    parameter minHeight_.
 
     local dt to 0.1.
-    local tarVel to TargetVelocity(dist_ - vel_ * dt, maxAcc_, vesselHeight_).
+    local tarVel to TargetVelocity(dist_ - vel_ * dt, maxAcc_, minHeight_).
     local tarAcc to (vel_ - tarVel) / dt.
 
     return min(1, max(0, (tarAcc - extAcc * UP:Vector) / maxAcc_)).
@@ -69,3 +67,17 @@ function PredictThrottle {
 //     print liftRatio + " " + tmp3 + " " + thrustAcc_.
 //     return tmp3.
 // }
+
+local impPos to Ship:Position.
+function UpdateImpPos {
+    local updated to False.
+    local msg to 0.
+    until Core:Messages:Empty {
+        set msg to Core:Messages:Pop.
+        set updated to True.
+    }
+    if updated {
+        set impPos to msg:Content.
+    }
+    return impPos.
+}
