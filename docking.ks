@@ -1,369 +1,270 @@
-CLEARSCREEN.
+ClearScreen.
 
-SET thrustAcc TO 0.
-SET thrustCrossVec TO V(0, 0, 0).
-SET thrustFace TO TRUE.
+local rcsForceFore to 1.
+local rcsForceStar to 1.
+local rcsForceTop  to 1.
 
-SET rcsAccFore TO 0.
-SET rcsAccStar TO 0.
-SET rcsAccTop TO 0.
+local turnTime to 0.
 
-SET turnTime TO 0.
+local tset to 0.
+local sset to Ship:Facing:Vector.
+lock Throttle to tset.
+lock Steering to sset.
 
-FUNCTION unlockEverything {
-    SET THROTTLE TO 0.
-    UNLOCK STEERING.
-    UNLOCK THROTTLE.
-    SET SHIP:CONTROL:STARBOARD TO 0.
-    SET SHIP:CONTROL:FORE      TO 0.
-    SET SHIP:CONTROL:TOP       TO 0.
+local ctlPart to Ship:ControlPart.
+if not Target:HasSuffix("Ship") {
+    Approch(ctlPart, Target).
+}
+Docking(ctlPart).
+
+function UnlockEverything {
+    set tset to 0.
+    unlock Throttle.
+    unlock Steering.
+    set Ship:Control:StarBoard to 0.
+    set Ship:Control:Fore      to 0.
+    set Ship:Control:Top       to 0.
 }
 
-FUNCTION notify {
-    PARAMETER str.
+function Notify {
+    parameter str.
 
-    HUDTEXT(str, 5, 2, 20, WHITE, FALSE).
-    PRINT str.
+    HudText(str, 5, 2, 20, White, False).
+    print str.
 }
 
-FUNCTION waitAttitudeStableWithParam {
-    PARAMETER dir.
-    PARAMETER cosValue1.
-    PARAMETER cosValue2.
+function WaitAttitudeStableWithParam {
+    parameter dir.
+    parameter cosValue1.
+    parameter cosValue2.
 
-    notify("Wait for stable.").
+    Notify("Wait for stable.").
 
-    SET last1 TO SHIP:FACING:STARVECTOR.
-    SET last2 TO SHIP:FACING:FOREVECTOR.
-    SET last3 TO SHIP:FACING:TOPVECTOR.
-    SET n TO 0.
-    SET c TO 0.
-    UNTIL n > 10 {
-        LOCK STEERING TO dir.
+    local last1 to Ship:Facing:StarVector.
+    local last2 to Ship:Facing:ForeVector.
+    local last3 to Ship:Facing:TopVector.
+    local n to 0.
+    local c to 0.
+    until n > 10 {
+        LOCK STEERING to dir.
         wait 0.1.
-        SET cur1 TO SHIP:FACING:STARVECTOR.
-        SET cur2 TO SHIP:FACING:FOREVECTOR.
-        SET cur3 TO SHIP:FACING:TOPVECTOR.
-        IF cur1 * last1 > cosValue1 AND
-           cur2 * last2 > cosValue2 AND
+        local cur1 to Ship:Facing:StarVector.
+        local cur2 to Ship:Facing:ForeVector.
+        local cur3 to Ship:Facing:TopVector.
+        if cur1 * last1 > cosValue1 and
+           cur2 * last2 > cosValue2 and
            cur3 * last3 > cosValue2 {
-            SET n TO n + 1.
-        } ELSE {
-            SET n TO 0.
+            set n to n + 1.
+        } else {
+            set n to 0.
         }
-        SET c TO c + 1.
-        SET last1 TO cur1.
-        SET last2 TO cur2.
-        SET last3 TO cur3.
+        set c to c + 1.
+        set last1 to cur1.
+        set last2 to cur2.
+        set last3 to cur3.
     }
-    RETURN c / 10 - 1.
+    return c / 10 - 1.
 }
 
-FUNCTION waitAttitudeStable {
-    PARAMETER dir.
-    notify("Wait for stable.").
-    RETURN waitAttitudeStableWithParam(dir, 0.99995, -1).
+function WaitAttitudeStable {
+    parameter dir.
+    Notify("Wait for stable.").
+    return waitAttitudeStableWithParam(dir, 0.99995, -1).
 }
 
-FUNCTION waitAttitudeStableStrict {
-    PARAMETER dir.
-    notify("Wait for strict stable.").
-    RETURN waitAttitudeStableWithParam(dir, 0.999998, 0.999998).
+function WaitAttitudeStableStrict {
+    parameter dir.
+    Notify("Wait for strict stable.").
+    return waitAttitudeStableWithParam(dir, 0.999998, 0.999998).
 }
 
 // 测试旋转半周的时间
-FUNCTION testTurnTime {
-    WAIT 0.1.
-    SAS OFF.
-    RCS OFF.
-    
-    SET vec TO SHIP:FACING:VECTOR.
-    waitAttitudeStable(vec).
-
+function TestTurnTime {
+    wait 0.1.
     SAS OFF.
     RCS OFF.
 
-    SET vec TO -1 * vec.
-    
-    notify("Turning test begin.").
-    SET turnTime TO waitAttitudeStable(vec).
-    // notify("Turning test end.").
+    local vec to Ship:Facing:Vector.
+    WaitAttitudeStable(vec).
 
-    notify("Turning: " + turnTime).
-}
-
-// 测试火箭动力
-FUNCTION testThrustAcc {
-    PARAMETER ctlPort.
-    PARAMETER tarPort.
-
-    UNLOCK STEERING.
     SAS OFF.
     RCS OFF.
-    SET vec TO SHIP:FACING.
-    waitAttitudeStable(vec).
 
-    SET testThrottle TO 1.
-    SET testTime TO 1.
+    set vec to -1 * vec.
 
-    notify("Thrust power test begin.").
+    Notify("Turning test begin.").
+    set turnTime to WaitAttitudeStable(vec).
+    // Notify("Turning test end.").
 
-    LOCK THROTTLE TO 0.
-    SET vel0 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:VELOCITY:ORBIT.
-    LOCK THROTTLE TO testThrottle.
-    WAIT testTime.
-    LOCK THROTTLE TO 0.
-    SET vel1 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:VELOCITY:ORBIT.
-    
-    SET dv TO vel1 - vel0.
-    SET thrustAcc TO dv:MAG / testThrottle / testTime.
-    SET thrustVec TO dv:NORMALIZED.
-
-    PRINT ctlPort:PORTFACING.
-    PRINT ctlPort:PORTFACING:VECTOR.
-    PRINT dv.
-    SET xx TO ctlPort:PORTFACING.
-    SET yy TO ctlPort:PORTFACING:VECTOR.
-    SET zz TO dv.
-    SET thrustCrossVec TO VCRS(dv:NORMALIZED, ctlPort:PORTFACING:VECTOR).
-    SET thrustFace TO TRUE.//thrustCrossVec:MAG < 0.01.
-    
-    // notify("Thrust power test end.").
-    notify("Acceleration when full throttle: " + thrustAcc).
+    Notify("Turning: " + turnTime).
 }
 
-// 测试 RCS 动力
-FUNCTION testRcsAcc {
-    PARAMETER ctlPort.
-    PARAMETER tarPort.
-
-    SAS OFF.
-    RCS ON.
-    SET fore TO SHIP:FACING.
-    waitAttitudeStableStrict(fore).
-
-    SET testThrottle TO 1.
-    SET testTime TO 1.
-
-    notify("RCS power test begin.").
-
-    SET SHIP:CONTROL:FORE TO 0.
-    SET vel0 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:FORE TO testThrottle.
-    WAIT testTime.
-    SET vel1 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:FORE TO -testThrottle.
-    WAIT testTime.
-    SET SHIP:CONTROL:FORE TO 0.
-    SET dv TO vel1 - vel0.
-    SET rcsAccFore TO dv:MAG / testThrottle / testTime.
-    WAIT testTime.
-    
-    SET SHIP:CONTROL:STARBOARD TO 0.
-    SET vel0 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:STARBOARD TO testThrottle.
-    WAIT testTime.
-    SET vel1 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:STARBOARD TO -testThrottle.
-    WAIT testTime.
-    SET SHIP:CONTROL:STARBOARD TO 0.
-    SET dv TO vel1 - vel0.
-    SET rcsAccStar TO dv:MAG / testThrottle / testTime.
-    WAIT testTime.
-    
-    SET SHIP:CONTROL:TOP TO 0.
-    SET vel0 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:TOP TO -testThrottle.
-    WAIT testTime.
-    SET vel1 TO ctlPort:SHIP:VELOCITY:ORBIT - tarPort:SHIP:VELOCITY:ORBIT.
-    SET SHIP:CONTROL:TOP TO testThrottle.
-    WAIT testTime.
-    SET SHIP:CONTROL:TOP TO 0.
-    SET dv TO vel1 - vel0.
-    SET rcsAccTop TO dv:MAG / testThrottle / testTime.
-    WAIT testTime.
-
-    // notify("RCS power test end.").
-    notify("Acceleration when full RCS: (" + rcsAccFore + ", " + rcsAccStar + ", " + rcsAccTop + ")").
-}
-
-FUNCTION dockingFaceDirection {
-    PARAMETER targetVector.
-    IF thrustFace {
-        RETURN targetVector.
-    }
-    RETURN VCRS(targetVector, thrustCrossVec).
-}
-
-FUNCTION getTargetDockingPort {
-    FOR d IN TARGET:DOCKINGPORTS {
-        IF d:STATE = "Ready" {
-            RETURN d.
+function GetTargetDockingPort {
+    for d in Target:DockingPorts {
+        if d:State = "Ready" {
+            return d.
         }
     }
 }
 
 // 用火箭接近
-FUNCTION approch {
-    PARAMETER ctlPort.
-    PARAMETER tarPort.
+function Approch {
+    parameter ctlPart.
+    parameter tarPort.
+    parameter maxVel.
+    parameter accRatio.
 
-    IF (tarPort:POSITION - ctlPort:NODEPOSITION):MAG < 200 AND
-       (tarPort:VELOCITY:ORBIT - ctlPort:SHIP:VELOCITY:ORBIT):MAG < 20 {
-        RETURN.
+    if (tarPort:Position - ctlPart:NodePosition):Mag < 200 and
+       (tarPort:Velocity:Orbit - ctlPart:Ship:Velocity:Orbit):Mag < 20 {
+        return.
     }
 
-    SET distance TO 20.
-    
-    testTurnTime().
-    testThrustAcc(ctlPort, tarPort).
+    local distance to 30.
+    local approchStatus to 1.
+
+    TestTurnTime().
 
     SAS OFF.
     RCS OFF.
 
-    notify("Start approching.").
+    Notify("Start approching.").
 
-    UNTIL FALSE {
-        CLEARVECDRAWS().
+    until False {
+        ClearVecDraws().
 
         // 目标位置为目标前方 distance 距离处的点
-        SET tarPos TO tarPort:POSITION.
-        SET ctlPos TO ctlPort:NODEPOSITION.
-        SET tarVel TO tarPort:VELOCITY:ORBIT.
-        SET ctlVel TO ctlPort:SHIP:VELOCITY:ORBIT.
-        
+        local tarPos to tarPort:Position.
+        local ctlPos to ctlPart:NodePosition.
+        local tarVel to tarPort:Velocity:Orbit.
+        local ctlVel to ctlPart:Ship:Velocity:Orbit.
+
         // 与目标位置的距离
-        SET rlvPos TO tarPos - ctlPos.
-        SET rlvPosDist TO rlvPos:MAG - distance.
-        SET rlvPosVec TO rlvPos:NORMALIZED.
-        VECDRAW(V(0, 2, 0), rlvPos, RGB(1, 0, 0), "POS", 1, TRUE).
+        local rlvPos to tarPos - ctlPos.
+        local rlvPosDist to rlvPos:Mag - distance.
+        local rlvPosVec to rlvPos:Normalized.
+        VecDraw(V(0, 2, 0), rlvPos, RGB(1, 0, 0), "POS", 1, True).
 
         // 与目标的相对速度
-        SET rlvVel To tarVel - ctlVel.
-        SET rlvVelNorm TO rlvVel:MAG.
-        VECDRAW(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, TRUE).
+        local rlvVel to tarVel - ctlVel.
+        local rlvVelNorm to rlvVel:Mag.
+        VecDraw(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, True).
 
-        // 期望的接近速度
-        IF rlvPosDist < 1 {
-            SET expVelNorm TO 0.
-        } ELSE {
-            SET temp TO rlvPosDist + rlvVel * rlvPosVec * turnTime * (rlvPosVec * ctlPort:PORTFACING:VECTOR + 1) / 2.
-            SET expVelNorm TO MIN(100, MIN(temp / 10, SQRT(temp * thrustAcc) / 2)).
-        }
-        SET expVel TO rlvPosVec * expVelNorm.
-        VECDRAW(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, TRUE).
+        local thrustAcc to Ship:AvailableThrust / Ship:Mass.
+        local minDescendDist to rlvVel ^ 2 / thrustAcc / 2.
+
+        local expVelNorm to min(100, sqrt(2 * rlvPosDist * thrustAcc) * accRatio).
+        local expVel to rlvPosVec * expVelNorm.
+        VecDraw(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, True).
 
         // 与期望接近速度的差
-        SET expVelOffset TO expVel + rlvVel.
-        SET expVelOffsetNorm TO expVelOffset:MAG.
+        local expVelOffset to expVel + rlvVel.
+        local expVelOffsetNorm to expVelOffset:Mag.
 
-        // SET tarVec TO rlvPos:NORMALIZED.
-        SET tarVec TO expVelOffset:NORMALIZED.
-        SET facingVec TO dockingFaceDirection(tarVec).
+        // local tarVec to rlvPos:Normalized.
+        local tarVec to expVelOffset:Normalized.
+        VecDraw(V(0, 0, 0), tarVec * 10, RGB(1, 0, 0), "TAR A", 10, True).
 
-        // 达到期望接近速度时对准目标位置
-        IF expVelOffsetNorm > MAX(1, expVelNorm / 10) AND expVelNorm > 1 {
-            LOCK STEERING TO facingVec:DIRECTION.
+        if approchStatus = 1 {
+            if rlvPosDist < minDescendDist + rlvVel * rlvPosVec * turnTime {
+                set approchStatus to 2.
+            }
+        } else if approchStatus = 2 {
+            if rlvPosDist < minDescendDist {
+                set approchStatus to 3.
+            }
+        } else {
+            if rlvPosDist < 1 and expVelNorm < 0.1 and expVelOffsetNorm < 0.1 {
+                UnlockEverything().
+                SAS ON.
+                Notify("Approching finished.").
+                ClearVecDraws().
+                Break.
+            }
         }
-        
-        VECDRAW(V(0, 0, 0), tarVec * 10, RGB(1, 0, 0), "TAR A", 10, TRUE).
-        IF NOT thrustFace {
-            VECDRAW(V(0, 0, 0), facingVec * 10, RGB(0, 1, 0), "TAR F", 10, TRUE).
+
+        if approchStatus = 2 {
+            set tset to 0.
+            set sset to -rlvPosVec.
+        } else {
+            // 达到期望接近速度时对准目标位置
+            if expVelOffsetNorm > max(1, expVelNorm / 10) and expVelNorm > 1 {
+                set sset to facingVec.
+            }
+
+            // 角度接近时开始机动
+            if facingVec * ctlPart:PortFacing:Vector > 0.99 {
+                set tset to expVelOffsetNorm / thrustAcc.
+            } else {
+                set tset to 0.
+            }
         }
 
-        // 角度接近时开始机动
-        IF facingVec * ctlPort:PORTFACING:VECTOR > 0.99 {
-            LOCK THROTTLE TO expVelOffsetNorm / thrustAcc.
-        } ELSE {
-            LOCK THROTTLE TO 0.
-        }
-
-        WAIT 0.01.
-
-        IF rlvPosDist < 1 AND expVelNorm < 0.1 AND expVelOffsetNorm < 0.1 {
-            SET THROTTLE TO 0.
-            UNLOCK STEERING.
-            UNLOCK THROTTLE.
-            notify("Approching finished.").
-            CLEARVECDRAWS().
-            BREAK.
-        }
+        wait 0.01.
     }
 }
 
 // 用 RCS 对接
-FUNCTION docking {
-    PARAMETER ctlPort.
+function Docking {
+    parameter ctlPart.
 
-    notify("If not safe to docking, move first. Then set the target docker as target. Then will start docking.").
-    WAIT UNTIL TARGET:HASSUFFIX("SHIP").
-
-    testRcsAcc(ctlPort, TARGET).
+    Notify("if not safe to docking, move first. Then set the Target docker as Target. Then will start docking.").
+    wait until Target:HasSuffix("Ship").
 
     SAS OFF.
     RCS ON.
 
-    SET tarPort TO TARGET.
-    SET dockingState TO 1.
-    SET distance TO 1.
+    local tarPort to Target.
+    local dockingState to 1.
+    local distance to 1.
 
-    UNTIL FALSE {
-        CLEARVECDRAWS().
+    until False {
+        ClearVecDraws().
 
         // 目标位置为目标前方 distance 距离处的点
-        IF dockingState = 1 {
-            SET tarPos TO tarPort:NODEPOSITION + tarPort:PORTFACING:VECTOR * distance.
-        } ELSE {
-            SET tarPos TO tarPort:NODEPOSITION.
+        local tarPos to tarPort:NodePosition.
+        if dockingState = 1 {
+            set tarPos to tarPort:NodePosition + tarPort:PortFacing:Vector * distance.
         }
-        SET tarVel TO tarPort:SHIP:VELOCITY:ORBIT.
-        SET ctlPos TO ctlPort:NODEPOSITION.
-        SET ctlVel TO ctlPort:SHIP:VELOCITY:ORBIT.
-        
+        local tarVel to tarPort:Ship:Velocity:Orbit.
+        local ctlPos to ctlPart:NodePosition.
+        local ctlVel to ctlPart:Ship:Velocity:Orbit.
+
         // 与目标位置的距离
-        SET rlvPos TO tarPos - ctlPos.
-        SET rlvPosDist TO rlvPos:MAG.
-        SET rlvPosVec TO rlvPos:NORMALIZED.
-        VECDRAW(V(0, 2, 0), rlvPos, RGB(1, 0, 0), "POS", 1, TRUE).
-        IF rlvPosDist < 0.1 {
-            SET dockingState TO 2.
+        local rlvPos to tarPos - ctlPos.
+        local rlvPosDist to rlvPos:Mag.
+        local rlvPosVec to rlvPos:Normalized.
+        VecDraw(V(0, 2, 0), rlvPos, RGB(1, 0, 0), "POS", 1, True).
+        if rlvPosDist < 0.1 {
+            set dockingState to 2.
         }
 
         // 与目标的相对速度
-        SET rlvVel To tarVel - ctlVel.
-        SET rlvVelNorm TO rlvVel:MAG.
-        VECDRAW(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, TRUE).
+        local rlvVel to tarVel - ctlVel.
+        local rlvVelNorm to rlvVel:Mag.
+        VecDraw(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, True).
 
         // 期望的接近速度
-        SET expVelNorm TO MAX(0.1, MIN(10, MIN(rlvPosDist / 10, SQRT(rlvPosDist * rcsAccFore) / 2))).
-        SET expVel TO rlvPosVec * expVelNorm.
-        VECDRAW(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, TRUE).
+        set expVelNorm to max(0.1, min(10, min(rlvPosDist / 10, sqrt(rlvPosDist * rcsAccFore) / 2))).
+        set expVel to rlvPosVec * expVelNorm.
+        VecDraw(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, True).
 
         // 与期望接近速度的差
-        SET expVelOffset TO expVel + rlvVel.
+        set expVelOffset to expVel + rlvVel.
 
-        VECDRAW(V(0, 0, 0), expVelOffset:NORMALIZED, RGB(1, 0, 0), "TAR A", 5, TRUE).
+        VecDraw(V(0, 0, 0), expVelOffset:Normalized, RGB(1, 0, 0), "TAR A", 5, True).
 
-        LOCK STEERING TO LOOKDIRUP(-tarPort:PORTFACING:VECTOR, tarPort:PORTFACING:TOPVECTOR).
-        SET SHIP:CONTROL:STARBOARD TO expVelOffset * SHIP:FACING:STARVECTOR / rcsAccStar.
-        SET SHIP:CONTROL:FORE      TO expVelOffset * SHIP:FACING:FOREVECTOR / rcsAccFore.
-        SET SHIP:CONTROL:TOP       TO expVelOffset * SHIP:FACING:TOPVECTOR  / rcsAccTop.
+        LOCK STEERING to LOOKDIRUP(-tarPort:PortFacing:Vector, tarPort:PortFacing:TopVector).
+        set Ship:Control:STARBOARD to expVelOffset * Ship:Facing:StarVector / rcsAccStar.
+        set Ship:Control:FORE      to expVelOffset * Ship:Facing:ForeVector / rcsAccFore.
+        set Ship:Control:TOP       to expVelOffset * Ship:Facing:TopVector  / rcsAccTop.
 
-        WAIT 0.01.
+        wait 0.01.
 
-        IF TARGET:STATE <> "Ready" {
-            notify("Docking success.").
+        if Target:STATE <> "Ready" {
+            Notify("Docking success.").
             unlockEverything().
             CLEARVECDRAWS().
-            BREAK.
+            Break.
         }
     }
 }
-
-unlockEverything().
-SET ctlPort TO SHIP:CONTROLPART.
-// testThrustAcc(ctlPort, TARGET).
-IF NOT TARGET:HASSUFFIX("SHIP") {
-    approch(ctlPort, TARGET).
-}
-docking(ctlPort).
