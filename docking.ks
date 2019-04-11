@@ -7,6 +7,8 @@ local rcsForceTop  to 1.
 local turnTime to 4.
 
 local ctlPart to Ship:ControlPart.
+
+UnlockEverything().
 TestRcsAcc(ctlPart).
 if not Target:HasSuffix("Ship") {
     Approch(ctlPart, Target, 100, 0.1).
@@ -43,39 +45,50 @@ function TestRcsAcc {
 
     local testThrottle to 1.
     local testTime to 0.5.
+    local ratio to 0.8.
 
     notify("RCS power test begin.").
 
-    local accNow to Ship:Sensors:acc.
-
+    local acc1 to Ship:Sensors:Acc.
     set Ship:Control:Fore to testThrottle.
     wait testTime.
-    set rcsAccFore to (Ship:Sensors:Acc - accNow) * Ship:Facing:ForeVector.
+    local acc2 to Ship:Sensors:Acc.
     set Ship:Control:Fore to -testThrottle.
     wait testTime.
     set Ship:Control:Fore to 0.
     wait testTime.
-    
+    local acc3 to (acc2 - acc1) * Ship:Facing:ForeVector.
+    local acc4 to (acc2 - acc1):Mag * ratio.
+    set rcsForceFore to max(acc3, acc4) / testThrottle * Ship:Mass.
+
+    set acc1 to Ship:Sensors:Acc.
     set Ship:Control:StarBoard to testThrottle.
     wait testTime.
-    set rcsAccStar to (Ship:Sensors:Acc - accNow) * Ship:Facing:StarVector.
+    set acc2 to Ship:Sensors:Acc.
     set Ship:Control:StarBoard to -testThrottle.
     wait testTime.
     set Ship:Control:StarBoard to 0.
     wait testTime.
-    
+    set acc3 to (acc2 - acc1) * Ship:Facing:StarVector.
+    set acc4 to (acc2 - acc1):Mag * ratio.
+    set rcsForceStar to max(acc3, acc4) / testThrottle * Ship:Mass.
+
+    set acc1 to Ship:Sensors:Acc.
     set Ship:Control:Top to testThrottle.
     wait testTime.
-    set rcsAccTop to (Ship:Sensors:Acc - accNow) * Ship:Facing:TopVector.
+    set acc2 to Ship:Sensors:Acc.
     set Ship:Control:Top to -testThrottle.
     wait testTime.
     set Ship:Control:Top to 0.
     wait testTime.
+    set acc3 to (acc2 - acc1) * Ship:Facing:TopVector.
+    set acc4 to (acc2 - acc1):Mag * ratio.
+    set rcsForceTop to max(acc3, acc4) / testThrottle * Ship:Mass.
 
     UnlockEverything().
 
     // notify("RCS power test end.").
-    notify("Acceleration when full RCS: (" + rcsAccFore + ", " + rcsAccStar + ", " + rcsAccTop + ")").
+    notify("Acceleration when full RCS: (" + rcsForceFore + ", " + rcsForceStar + ", " + rcsForceTop + ")").
 }
 
 function WaitAttitudeStableWithParam {
@@ -268,23 +281,23 @@ function Approch {
         } else if approchStatus = 2 {
             set tset to 0.
             set sset to rlvVel.//-rlvPosVec.
-            set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / rcsAccStar)).
-            // set Ship:Control:Fore      to min(1, max(-1, expAcc * Ship:Facing:ForeVector / rcsAccFore)).
-            set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / rcsAccTop )).
+            set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
+            set Ship:Control:Fore      to 0.
+            set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
         } else if approchStatus = 3 {
             set tset to min(1, max(0, -expAcc * rlvPosVec / thrustAcc)).
             set sset to rlvVel.//-rlvPosVec.
-            set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / rcsAccStar)).
-            // set Ship:Control:Fore      to min(1, max(-1, expAcc * Ship:Facing:ForeVector / rcsAccFore)).
-            set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / rcsAccTop )).
+            set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
+            set Ship:Control:Fore      to 0.
+            set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
         } else {
             set tset to 0.
             // set sset to -rlvPosVec.
-            set Ship:Control:StarBoard to min(1, max(-1, expVelOffset * Ship:Facing:StarVector / rcsAccStar)).
-            set Ship:Control:Fore      to min(1, max(-1, expVelOffset * Ship:Facing:ForeVector / rcsAccFore)).
-            set Ship:Control:Top       to min(1, max(-1, expVelOffset * Ship:Facing:TopVector  / rcsAccTop )).
+            set Ship:Control:StarBoard to min(1, max(-1, expVelOffset * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
+            set Ship:Control:Fore      to min(1, max(-1, expVelOffset * Ship:Facing:ForeVector / (rcsForceFore / Ship:Mass))).
+            set Ship:Control:Top       to min(1, max(-1, expVelOffset * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
         }
-        
+
         VecDraw(V(0, 0, 0), sset * 10, RGB(1, 0, 0), "TAR A", 10, True).
 
         print approchStatus + " " + turnDist + " " + expVelNorm + " " + tset.
@@ -341,7 +354,7 @@ function Docking {
         VecDraw(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, True).
 
         // 期望的接近速度
-        local expVelNorm to max(0.1, min(maxVel, sqrt(max(0, 2 * (rlvPosDist - 1) * rcsAccFore * accRatio)))).
+        local expVelNorm to max(0.1, min(maxVel, sqrt(max(0, 2 * (rlvPosDist - 1) * (rcsForceFore / Ship:Mass) * accRatio)))).
         local expVel to rlvPosVec * expVelNorm.
         VecDraw(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, True).
 
@@ -352,9 +365,9 @@ function Docking {
         VecDraw(V(0, 0, 0), expVelOffset:Normalized, RGB(1, 0, 0), "TAR A", 5, True).
 
         set sset to LookDirUp(-tarPort:PortFacing:Vector, tarPort:PortFacing:TopVector).
-        set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / rcsAccStar)).
-        set Ship:Control:Fore      to min(1, max(-1, expAcc * Ship:Facing:ForeVector / rcsAccFore)).
-        set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / rcsAccTop )).
+        set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
+        set Ship:Control:Fore      to min(1, max(-1, expAcc * Ship:Facing:ForeVector / (rcsForceFore / Ship:Mass))).
+        set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
 
         wait 0.01.
 

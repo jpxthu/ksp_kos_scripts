@@ -26,7 +26,6 @@ Core:Messages:Clear().
 local stableCount to 0.
 
 local dt to 0.01.
-local steeringTime to 2.
 local lanPos to landGeo:Position.
 local landHeight to landGeo:TerrainHeight.
 local landOnSea to landHeight < 0.
@@ -60,7 +59,7 @@ until FALSE {
 
     set tset to targetThrottle(velZ, dist, maxAccZ, gravity, minHeight).
 
-    CLEARVECDRAWS().
+    ClearVecDraws().
     if velZ > 10 {
         // set impPos to Addons:Tr:ImpactPos:Position.
         local impPos to UpdateImpPos().
@@ -78,9 +77,9 @@ until FALSE {
         // set Ship:Control:Fore      to 0.
         set Ship:Control:Top       to min(1, max(-1, errPos * Ship:Facing:TopVector)).
 
-        VECDRAW(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, TRUE).
-        VECDRAW(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, TRUE).
-        VECDRAW(V(0, 0, 0), sset * 50, RGB(0, 0, 1), "tarDir", 1, TRUE).
+        VecDraw(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, True).
+        VecDraw(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, True).
+        VecDraw(V(0, 0, 0), sset * 50, RGB(0, 0, 1), "tarDir", 1, True).
     } else {
         set Ship:Control:StarBoard to -vel * Ship:Facing:StarVector.
         // set Ship:Control:Fore      to 0.
@@ -113,4 +112,4 @@ unlock Steering.
 RCS OFF.
 
 if Brakes { toggle Brakes. }
-CLEARVECDRAWS().
+ClearVecDraws().
