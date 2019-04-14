@@ -24,6 +24,12 @@ Core:Messages:Clear().
 wait 1.
 Stage.
 
+RCS ON.
+set Ship:Control:Fore to -Ship:Facing:Vector * Ship:Facing:ForeVector.
+wait 1.
+set Ship:Control:Fore to 0.
+RCS OFF.
+
 RunPath("/recycle/recycle_constant").
-RunPath("/recycle/recycle_adjust", KERBAL_SEA_LANDING_SHIP).
-RunPath("/recycle/recycle_landing3", KERBAL_SEA_LANDING_SHIP, 40).
+RunPath("/recycle/recycle_adjust", KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U).
+RunPath("/recycle/recycle_landing3", KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U, 40).

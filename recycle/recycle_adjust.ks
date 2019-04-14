@@ -24,7 +24,7 @@ RCS ON.
 
 until FALSE {
     wait 0.01.
-    CLEARVECDRAWS().
+    // ClearVecDraws().
 
     local upVec to UP:Vector.
     if landOnSea {
@@ -33,8 +33,8 @@ until FALSE {
         set lanPos to landGeo:Position.
     }
 
-    // local tarPos to landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 100.
-    local tarPos to lanPos + (Ship:Velocity:Surface - Ship:Velocity:Surface * UP:Vector * UP:Vector):Normalized * 100.
+    // local tarPos to landGeo:Position + (landGeo:Position - landGeo:Position * UP:Vector * UP:Vector):Normalized * 50.
+    local tarPos to lanPos + (Ship:Velocity:Surface - Ship:Velocity:Surface * UP:Vector * UP:Vector):Normalized * 50.
     // local tarVec to tarPos - Addons:Tr:ImpactPos:Position.
     local impPos to UpdateImpPos().
     if Addons:Tr:HasImpact {
@@ -47,7 +47,7 @@ until FALSE {
 
     set sset to tarDir.
 
-    SetMaxStoppingTime(tarDir, 2, 4).
+    SetMaxStoppingTime(tarDir, 2, 5).
     local steerCM to tarDir * Ship:Facing:Vector.
     if steerCM > 0.95 {
         set tset to min(1, tarErr / 10000) * (steerCM - 0.95) * 20.

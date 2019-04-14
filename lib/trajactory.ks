@@ -1,25 +1,34 @@
-function ImpactPosition {
+function ImpactPositionKerbin {
     parameter k.
-    parameter terrainHeight.
+    parameter tarHeight.
 
-    local pos is Ship:Position.
-    local vel is Ship:Velocity:Surface.
-    local upV is UP:Vector.
-    local m is Ship:Mass * 1000.
-    local e is Constant:E.
+    local upV to UP:Vector.
+    local pos to Ship:Position.
+    local vel to Ship:Velocity:Surface.
+    local m to Ship:Mass * 1000.
+    local e to Constant:E.
+
+    local kr to Body:Radius.
+    local kmu to Body:MU.
+    local corePos to pos - upV * (Altitude + kr).
 
     until False {
-        local z is -pos * upV.
-        local h is Altitude - z.
-        local leftH is terrainHeight - z.
+        local posFromCore to pos - corePos.
+        local hToR to posFromCore:Mag.
+        local hToRSqrMag to posFromCore:SqrMagnitude.
+        local posFromCoreDir to posFromCore / hToR.
+
+        local h to hToR - kr.
+        local leftH to h - tarHeight.
         if leftH < 0 {
             break.
         }
-        local g is Body:MU / (h + Body:Radius) ^ 2.
-        local dens is 3.407 * e ^ (- ((h + 18250) / 17990) ^ 2).
-        local velM is vel:Mag.
-        local acc is -g * upV - vel * velM * dens / m * k.
-        local dt is min(10, max(0.1, leftH / max(1, velM)) / 2).
+
+        local g to -kmu / hToRSqrMag * posFromCoreDir.
+        local dens to 3.407 * e ^ (- ((h + 18250) / 17990) ^ 2).
+        local velM to vel:Mag.
+        local acc to g - vel * velM * dens / m * k.
+        local dt to min(10, max(0.1, leftH / max(1, velM) / 2)).
         set vel to vel + acc * dt.
         set pos to pos + vel * dt.
     }

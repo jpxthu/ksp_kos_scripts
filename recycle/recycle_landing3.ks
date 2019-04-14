@@ -59,7 +59,7 @@ until FALSE {
 
     set tset to targetThrottle(velZ, dist, maxAccZ, gravity, minHeight).
 
-    ClearVecDraws().
+    // ClearVecDraws().
     if velZ > 10 {
         // set impPos to Addons:Tr:ImpactPos:Position.
         local impPos to UpdateImpPos().
@@ -67,7 +67,8 @@ until FALSE {
         //     set impPos to Addons:Tr:ImpactPos:Position.
         // }
         // local tarPos to lanPos + min(velH * 0.05.
-        local tarPos to lanPos + velH * 0.1.
+        local bodyTailPos to -vesselHeight * fac.
+        local tarPos to lanPos + velH * 0.1 + (bodyTailPos - bodyTailPos * upVec * upVec).
 
         local plaVec to -vel:Normalized.
         set sset to plaVec.
@@ -77,9 +78,9 @@ until FALSE {
         // set Ship:Control:Fore      to 0.
         set Ship:Control:Top       to min(1, max(-1, errPos * Ship:Facing:TopVector)).
 
-        VecDraw(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, True).
-        VecDraw(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, True).
-        VecDraw(V(0, 0, 0), sset * 50, RGB(0, 0, 1), "tarDir", 1, True).
+        // VecDraw(V(0, 0, 0), tarPos, RGB(1, 0, 0), "TAR", 1, True).
+        // VecDraw(V(0, 0, 0), impPos, RGB(0, 1, 0), "IMP", 1, True).
+        // VecDraw(V(0, 0, 0), sset * 50, RGB(0, 0, 1), "tarDir", 1, True).
     } else {
         set Ship:Control:StarBoard to -vel * Ship:Facing:StarVector.
         // set Ship:Control:Fore      to 0.
@@ -112,4 +113,4 @@ unlock Steering.
 RCS OFF.
 
 if Brakes { toggle Brakes. }
-ClearVecDraws().
+// ClearVecDraws().
