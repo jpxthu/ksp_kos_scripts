@@ -1,28 +1,26 @@
 parameter approachSpeed.
 parameter approachThrottle.
 parameter approachDist.
+parameter dockingSpeed.
+parameter tarPortTag is "".
+parameter ctlPortTag is "".
+parameter turnTime is -1.
 
 RunOncePath("/lib/control").
-
-ClearScreen.
 
 local rcsForceFore to 1.
 local rcsForceStar to 1.
 local rcsForceTop  to 1.
 
-local turnTime to 4.
-
 UnlockControl().
 TestRcsAcc().
-if not Target:HasSuffix("Ship") {
-    Approach(Target, approachSpeed, approachThrottle, approachDist).
-}
-Docking(10).
+Approach(approachSpeed, approachThrottle, approachDist).
+Docking(dockingSpeed).
 
 function Notify {
     parameter str.
 
-    HudText(str, 5, 2, 20, White, False).
+    // HudText(str, 5, 2, 20, White, False).
     print str.
 }
 
@@ -163,19 +161,22 @@ function GetTargetDockingPort {
 
 // 用火箭接近
 function Approach {
-    parameter tarPort.
     parameter maxVel.
     parameter accRatio.
     parameter distance.
+
+    local tarPort to Target.
 
     if (tarPort:Position - Ship:Position):Mag < 200 and
        (tarPort:Velocity:Orbit - Ship:Velocity:Orbit):Mag < 20 {
         return.
     }
 
-    local approchStatus to 0.
+    local approachStatus to 0.
 
-    // TestTurnTime().
+    if turnTime < 0 {
+        TestTurnTime().
+    }
 
     SAS OFF.
     RCS OFF.
@@ -188,81 +189,112 @@ function Approach {
     lock Throttle to tset.
     lock Steering to sset.
 
+    local hasTarPortTag to (tarPortTag <> "").
+    local tarPortFound to False.
+    local dockingPort to Target.
+
     until False {
-        // ClearVecDraws().
+        ClearVecDraws().
 
         // 目标位置为目标前方 distance 距离处的点
-        local tarPos to tarPort:Position.
         local ctlPos to Ship:Position.
         local tarVel to tarPort:Velocity:Orbit.
         local ctlVel to Ship:Velocity:Orbit.
 
+        local tarPos to Target:Position.
+        if tarPortFound {
+            set tarPos to dockingPort:NodePosition + dockingPort:PortFacing:Vector * approachDist.
+        } else {
+            set tarPos to tarPos - (tarPos - ctlPos):Normalized * approachDist.
+            if hasTarPortTag {
+                local parts to Target:PartsTagged(tarPortTag).
+                if parts:Length > 0 {
+                    set dockingPort to parts[0].
+                    set tarPortFound to True.
+                }
+            }
+        }
+
         // 与目标位置的距离
         local rlvPos to tarPos - ctlPos.
-        local rlvPosDist to rlvPos:Mag - distance.
+        local rlvPosDist to 0.
         local rlvPosVec to rlvPos:Normalized.
+
+        if approachStatus > 1 {
+            set rlvPosDist to -rlvPos * Ship:Facing:Vector.
+        } else {
+            set rlvPosDist to rlvPos:Mag.
+        }
         // VecDraw(V(0, 2, 0), rlvPos, RGB(1, 0, 0), "POS", 1, True).
 
         // 与目标的相对速度
-        local rlvVel to tarVel - ctlVel.
-        local rlvVelNorm to rlvVel:Mag.
-        // VecDraw(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, True).
+        local rlvVel to ctlVel - tarVel.
+        local rlvVelMag to rlvVel:Mag.
+        local rlvVelVec to rlvVel:Normalized.
+        // VecDraw(V(0, -2, 0), rlvVel, RGB(1, 0, 0), "REL V", 1, True).
 
         local thrustAcc to Ship:AvailableThrust / Ship:Mass.
-        local minDescendDist to rlvVelNorm ^ 2 / thrustAcc / accRatio / 2.
+        local minDescendDist to rlvVelMag ^ 2 / thrustAcc / accRatio / 2.
+        if rlvVel * rlvPosVec < 0 {
+            if approachStatus < 4 {
+                set approachStatus to 0.
+            }
+            set minDescendDist to 0.
+        }
 
         local expVelNorm to min(maxVel, sqrt(max(0, 2 * rlvPosDist * thrustAcc * accRatio))).
         local expVel to rlvPosVec * expVelNorm.
         // VecDraw(V(0, -2, 0), expVel, RGB(0, 1, 0), "EXP V", 1, True).
 
         // 与期望接近速度的差
-        local expVelOffset to expVel + rlvVel.
+        local expVelOffset to expVel - rlvVel.
         local expVelOffsetNorm to expVelOffset:Mag.
-        local expAcc to expVelOffset - thrustAcc * accRatio * rlvPosVec.
+        local expAcc to expVelOffset.// - thrustAcc * accRatio * rlvPosVec.
 
         // local tarVec to rlvPos:Normalized.
         local tarVec to expVelOffset:Normalized.
 
-        local turnDist to -rlvVel * rlvPosVec * turnTime.
-        if approchStatus = 0 {
+        local turnDist to rlvVelMag * turnTime.
+        if approachStatus = 0 {
             if rlvPosDist < minDescendDist + turnDist * 10 {
-                set approchStatus to 1.
-                set maxVel to min(maxVel, rlvVelNorm).
+                set approachStatus to 1.
+                set maxVel to min(maxVel, rlvVelMag).
             }
-        } else if approchStatus = 1 {
+        } else if approachStatus = 1 {
             if rlvPosDist < minDescendDist + turnDist * 2 {
-                set approchStatus to 2.
+                set approachStatus to 2.
                 RCS ON.
             }
-        } else if approchStatus = 2 {
-            if rlvPosDist < minDescendDist {
-                set approchStatus to 3.
+        } else if approachStatus = 2 {
+            if rlvPosDist < minDescendDist or Ship:Facing:Vector * rlvVelVec < -0.995 {
+                set approachStatus to 3.
             }
-        } else if approchStatus = 3 {
-            local deltaV to thrustAcc * accRatio.
-            if expVelNorm < deltaVPerSec and expVelOffsetNorm < deltaVPerSec {
-                set approchStatus to 4.
+        } else if approachStatus = 3 {
+            local deltaV to max(2, thrustAcc * accRatio * 0.5).
+            // if expVelNorm < deltaV and expVelOffsetNorm < deltaV {
+            if rlvVelMag < deltaV {
+                set approachStatus to 4.
             }
         } else {
             if rlvPosDist < 1 and expVelNorm < 0.1 and expVelOffsetNorm < 0.1 {
                 UnlockControl().
                 SAS ON.
                 Notify("Approching finished.").
-                // ClearVecDraws().
+                ClearVecDraws().
                 Break.
             }
         }
 
-        if approchStatus = 0 or approchStatus = 1 {
-            // 达到期望接近速度时对准目标位置
+        if approachStatus = 0 or approachStatus = 1 {
+            // 达到期望接近速度时不频繁换姿态
             if expVelOffsetNorm > 0.5 {
                 set sset to tarVec.
             }
 
             // 角度接近时开始机动
             local temp to sset * Ship:Facing:Vector.
-            if temp > 0.9 {
-                local tsetTemp to expVelOffsetNorm / thrustAcc * (temp - 0.9) * 10.
+            if temp > 0.95 {
+                local tsetTemp to expVelOffsetNorm / thrustAcc * (temp - 0.95) * 20.
                 if tsetTemp > 0.01 {
                     set tset to min(1, tsetTemp).
                 } else {
@@ -271,44 +303,53 @@ function Approach {
             } else {
                 set tset to 0.
             }
-        } else if approchStatus = 2 {
+        } else if approachStatus = 2 {
             set tset to 0.
-            set sset to rlvVel.//-rlvPosVec.
+            set sset to -rlvVelVec..
             set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
             set Ship:Control:Fore      to 0.
             set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
-        } else if approchStatus = 3 {
-            set tset to min(1, max(0, -expAcc * rlvPosVec / thrustAcc)).
-            set sset to rlvVel.//-rlvPosVec.
+        } else if approachStatus = 3 {
+            set tset to min(1, max(0, expAcc * Ship:Facing:Vector / thrustAcc + accRatio)).
+            set sset to -rlvVelVec * 0.95 + tarVec * 0.05.
             set Ship:Control:StarBoard to min(1, max(-1, expAcc * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
             set Ship:Control:Fore      to 0.
             set Ship:Control:Top       to min(1, max(-1, expAcc * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
         } else {
             set tset to 0.
             // set sset to -rlvPosVec.
-            set Ship:Control:StarBoard to min(1, max(-1, expVelOffset * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
-            set Ship:Control:Fore      to min(1, max(-1, expVelOffset * Ship:Facing:ForeVector / (rcsForceFore / Ship:Mass))).
-            set Ship:Control:Top       to min(1, max(-1, expVelOffset * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
+            set Ship:Control:StarBoard to min(1, max(-1, -rlvVel * Ship:Facing:StarVector / (rcsForceStar / Ship:Mass))).
+            set Ship:Control:Fore      to min(1, max(-1, -rlvVel * Ship:Facing:ForeVector / (rcsForceFore / Ship:Mass))).
+            set Ship:Control:Top       to min(1, max(-1, -rlvVel * Ship:Facing:TopVector  / (rcsForceTop  / Ship:Mass))).
         }
 
-        // VecDraw(V(0, 0, 0), sset * 10, RGB(1, 0, 0), "TAR A", 10, True).
+        // VecDraw(V(0, 0, 0), sset * 10, RGB(1, 0, 0), "TAR A", 1, True).
 
-        print approchStatus + " " + turnDist + " " + expVelNorm + " " + tset.
+        // print approachStatus + " " + turnDist + " " + expVelNorm + " " + tset.
+        print approachStatus + " " + rlvVelMag + " " + minDescendDist + " " + rlvPosDist.
 
-        wait 0.01.
+        wait 0.1.
     }
 }
 
 // 用 RCS 对接
 function Docking {
     parameter maxVel.
-    
 
     Notify("if not safe to docking, move first. Then set the Target docker as Target. Then will start docking.").
-    wait until Target:HasSuffix("Ship").
-    wait until Ship:ControlPart:HasSuffix("Ship").
-    
+
     local tarPort to Target.
+    if tarPortTag <> "" {
+        set tarPort to Target:PartsTagged(tarPortTag)[0].
+    } else {
+        wait until Target:HasSuffix("Ship").
+        set tarPort to Target.
+    }
+    // wait until Ship:ControlPart:HasSuffix("Ship").
+    
+    if ctlPortTag <> "" {
+        Ship:PartsTagged(ctlPortTag)[0]:ControlFrom().
+    }
     local ctlPart to Ship:ControlPart.
 
     local accRatio to min(1, max(0.01, 2 / rcsForceFore)).
@@ -330,7 +371,7 @@ function Docking {
     lock Steering to sset.
 
     until False {
-        // ClearVecDraws().
+        ClearVecDraws().
 
         local tarPos to tarPort:NodePosition.
         if dockingState = 1 {
@@ -352,7 +393,7 @@ function Docking {
 
         // 与目标的相对速度
         local rlvVel to tarVel - ctlVel.
-        local rlvVelNorm to rlvVel:Mag.
+        local rlvVelMag to rlvVel:Mag.
         // VecDraw(V(0, -2, 0), -rlvVel, RGB(1, 0, 0), "REL V", 1, True).
 
         // 期望的接近速度
@@ -373,10 +414,10 @@ function Docking {
 
         wait 0.01.
 
-        if Target:State <> "Ready" {
+        if tarPort:State <> "Ready" {
             Notify("Docking success.").
             UnlockControl().
-            // ClearVecDraws().
+            ClearVecDraws().
             Break.
         }
     }
