@@ -12,6 +12,7 @@ until False {
             break.
         }
     }
+    wait 0.1.
 }
 
 wait 0.1.

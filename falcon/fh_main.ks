@@ -1,8 +1,5 @@
 local secondaryStageFuel to 2000.
 
-local connNorth to Processor("cpuNorth"):Connection.
-local connSouth to Processor("cpuSouth"):Connection.
-
 local secondaryFuel to 0.
 for r in Ship:PartsTagged("ftNorth")[0]:Resources {
     if r:Name = "LiquidFuel" {
@@ -11,23 +8,35 @@ for r in Ship:PartsTagged("ftNorth")[0]:Resources {
     }
 }
 
-wait until secondaryFuel:Amount <= secondaryStageFuel.
+until secondaryFuel:Amount <= secondaryStageFuel {
+    wait 0.1.
+}
 Core:Messages:Clear().
 
-connNorth:SendMessage("Detach").
-connSouth:SendMessage("Detach").
+Processor("cpuNorth"):Connection:SendMessage("Detach").
+Processor("cpuSouth"):Connection:SendMessage("Detach").
+Processor("cpuNorthImpact"):Connection:SendMessage("Begin").
+Processor("cpuSouthImpact"):Connection:SendMessage("Begin").
 wait 0.01.
 Stage.
 
-wait until Throttle < 0.1.
+wait 0.01.
+local eg to Ship:PartsTagged("egMain")[0].
+set eg:ThrustLimit to 100.
+
+until Throttle < 0.1 {
+    wait 0.1.
+}
 Core:Messages:Clear().
 wait 1.
 Stage.
+Processor("cpuMainImpact"):Connection:SendMessage("Begin").
 
 RCS ON.
-set Ship:Control:Fore to -Ship:Facing:Vector * Ship:Facing:ForeVector.
+set Ship:Control:Fore to -1.
 wait 1.
 set Ship:Control:Fore to 0.
+wait 1.
 RCS OFF.
 
 RunPath("/recycle/recycle_constant").

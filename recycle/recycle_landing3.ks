@@ -26,7 +26,7 @@ Core:Messages:Clear().
 
 local stableCount to 0.
 
-local dt to 0.01.
+local dt to 0.1.
 local lanPos to landGeo:Position.
 local landHeight to landGeo:TerrainHeight.
 local landOnSea to landHeight < 0.
