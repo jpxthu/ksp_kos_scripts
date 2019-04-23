@@ -6,3 +6,8 @@ function CalculateQ {
         return q * (Ship:Velocity:Orbit:Mag) ^ 2.
     }
 }
+
+function AngleToHeading {
+    parameter angle.
+    return Heading(90, 90 - angle).
+}
